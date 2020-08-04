@@ -1,0 +1,21 @@
+{
+  "name": "dash-camera-data-exporter",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "ava",
+    "start": "node index.js",
+    "export": "node export.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "luxon": "^1.24.1",
+    "tesseract.js": "^2.1.1"
+  },
+  "devDependencies": {
+    "ava": "^3.11.1"
+  }
+}

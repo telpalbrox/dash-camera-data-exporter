@@ -1,0 +1,9 @@
+package-lock.json
+node_modules/
+old/
+eng.traineddata
+output.json
+progress.json
+frames/
+.DS_Store
+video/
