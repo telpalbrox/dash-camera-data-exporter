@@ -1,7 +1,7 @@
 const test = require("ava");
 const { parseCoordinate, parseCameraText, parseSpeed } = require("./parse");
 
-test.only("It should parse coordinates", (t) => {
+test("It should parse coordinates", (t) => {
     t.is(parseCoordinate("N48°30°32.44"), 48.509011);
     t.is(parseCoordinate("N48° 30\" 32. 44”"), 48.509011);
     t.is(parseCoordinate("E34°59’ 9.63"), 34.986008);
