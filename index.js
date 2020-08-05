@@ -1,3 +1,4 @@
+const os = require("os");
 const path = require("path");
 const fs = require("fs");
 const Tesseract = require("tesseract.js");
@@ -5,9 +6,21 @@ const { parseCameraText } = require("./parse");
 const utils = require("./utils");
 const { readdir } = require("./utils");
 
-const createWorker = Tesseract.createWorker;
+const { createWorker, createScheduler } = Tesseract;
 
-const worker = createWorker();
+const scheduler = createScheduler();
+
+const addNewWorker = async () => {
+    const worker = createWorker();
+    await worker.load();
+    await worker.loadLanguage("eng");
+    await worker.initialize("eng");
+    worker.setParameters({
+        tessedit_char_whitelist: "NSWE0123456789DOWLSKMH.:°”’/ "
+    });
+    scheduler.addWorker(worker);
+};
+
 
 const outputFile = path.join(__dirname, "output.json");
 const progressFile = path.join(__dirname, "progress.json");
@@ -35,6 +48,8 @@ const parseFrames = async (videoFileName) => {
     if (videoProgress.finished === true) {
         return;
     }
+    const jobPromises = [];
+    const nonHiddenFiles = [];
     for (let file of files) {
         if (file.startsWith(".")) {
             continue;
@@ -45,9 +60,16 @@ const parseFrames = async (videoFileName) => {
         const filePath = path.join(__dirname, "frames", file);
         // convert frame_0001.png -fuzz 40% -fill black +opaque "#FFFB53" test.png
         await utils.exec("convert", [filePath, "-fuzz", "40%", "-fill", "black", "+opaque", "#FFFB53", filePath]);
-        console.log("Starting to get text", filePath);
-        const { data: { text } } = await worker.recognize(filePath);
-        console.log("Got text", filePath, text);
+        console.log("Add job text", filePath);
+        jobPromises.push(scheduler.addJob("recognize", filePath));
+        nonHiddenFiles.push([file, filePath]);
+    }
+
+    const results = await Promise.all(jobPromises);
+
+    for (let i = 0; i < results.length; i++) {
+        const { data: { text } } = results[i];
+        const [file, filePath] = nonHiddenFiles[i];
         try {
             const frame = parseCameraText(text)
             console.log("Parsed text", filePath, text, frame);
@@ -65,6 +87,7 @@ const parseFrames = async (videoFileName) => {
             await utils.writeFile(progressFile, JSON.stringify(progress, null, 4));
         }
     }
+
     for (let file of files) {
         if (file.startsWith(".")) {
             continue;
@@ -78,9 +101,10 @@ const parseFrames = async (videoFileName) => {
 };
 
 (async () => {
-    await worker.load();
-    await worker.loadLanguage("eng");
-    await worker.initialize("eng");
+    const createWorkerPromises = [];
+    for (let i = 0; i < os.cpus().length / 2; i++) {
+        await addNewWorker();
+    }
     const files = await readdir(sourceVideoDir);
     for (let file of files) {
         if (file.startsWith(".")) {
@@ -100,8 +124,8 @@ const parseFrames = async (videoFileName) => {
         }
         await parseFrames(file);
     }
-    await worker.terminate();
+    await scheduler.terminate();
 })().catch((err) => {
     console.error(err);
-    return worker.terminate();
+    return scheduler.terminate();
 });
