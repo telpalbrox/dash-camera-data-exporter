@@ -7,6 +7,7 @@ const writeFile = util.promisify(fs.writeFile);
 const mkdir = util.promisify(fs.mkdir);
 const readdir = util.promisify(fs.readdir);
 const unlink = util.promisify(fs.unlink);
+const stat = util.promisify(fs.stat);
 
 function exec(command, commandArguments, options) {
     return new Promise((resolve, reject) => {
@@ -38,5 +39,6 @@ module.exports = {
     readFile,
     writeFile,
     readdir,
-    unlink
+    unlink,
+    stat
 };

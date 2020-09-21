@@ -71,7 +71,7 @@ const parseFrames = async (videoFileName) => {
         const { data: { text } } = results[i];
         const [file, filePath] = nonHiddenFiles[i];
         try {
-            const frame = parseCameraText(text)
+            const frame = parseCameraText(text);
             console.log("Parsed text", filePath, text, frame);
             output.push({ ...frame, videoFileName });
             await utils.writeFile(outputFile, JSON.stringify(output, null, 4));
@@ -101,7 +101,6 @@ const parseFrames = async (videoFileName) => {
 };
 
 (async () => {
-    const createWorkerPromises = [];
     for (let i = 0; i < os.cpus().length / 2; i++) {
         await addNewWorker();
     }
@@ -114,10 +113,15 @@ const parseFrames = async (videoFileName) => {
         if (videoProgress.finished === true) {
             continue;
         }
+        const filePath = path.join(sourceVideoDir, file);
+        const stat = await utils.stat(filePath);
+        if (stat.isDirectory()) {
+            continue;
+        }
         if (videoProgress.frames !== true) {
             // ffmpeg -i video/2020_0731_184119_552.MOV -r 0.25 -filter:v "crop=1905:40:15:1020" frames/frame_%04d.png
             console.log("Generating frames for", file);
-            await utils.exec("ffmpeg", ["-i", path.join(sourceVideoDir, file), "-r", 0.25, "-filter:v", "crop=1905:40:15:1020", path.join(framesDir, "frame_%04d.png")]);
+            await utils.exec("ffmpeg", ["-i", filePath, "-r", 0.25, "-filter:v", "crop=1905:40:15:1020", path.join(framesDir, "frame_%04d.png")]);
             videoProgress.frames = true;
             progress[file] = videoProgress;
             await utils.writeFile(progressFile, JSON.stringify(progress, null, 4));

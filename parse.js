@@ -74,7 +74,7 @@ const latLongRegex = /[N|E|S|W](\s*\d+\s*[°|"|’|”|7|\s]\s*-*){2}\s*(\d+.?\d
  * @returns {LatLong}
  */
 const parseLatitudeLongitude = (text) => {
-    text = text.replace(/NA/, "N4").replace("N4A", "N4");
+    text = text.replace(/NA/, "N4").replace("N4A", "N4").replace(/’°/gi, "’");
     const regexResult = text.match(latLongRegex);
     if (regexResult == null) {
         throw new Error("INVALID_LAT_LONG: no latitude and longitude found");
@@ -106,7 +106,7 @@ const parseCoordinates = (text) => {
     };
 };
 
-const speedRegex = /[o|O|\d+]+KM\/H/gi;
+const speedRegex = /[o|O|\d]+KM\/H/gi;
 const oReplace = /[o|O]+/gi;
 /**
  * @param {string} text
